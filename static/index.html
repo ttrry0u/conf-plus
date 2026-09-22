@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Конф+ — управление конференциями</title>
+<link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body>
+
+<!-- ============ ЭКРАН АВТОРИЗАЦИИ ============ -->
+<div id="auth-screen" class="auth-wrap">
+  <div class="auth-card">
+    <div class="brand">
+      <div class="brand-logo">К+</div>
+      <div>
+        <h1>Конф+</h1>
+        <p class="muted">Управление конференциями, докладами и участниками</p>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" data-tab="login">Вход</button>
+      <button class="tab" data-tab="register">Регистрация</button>
+    </div>
+
+    <form id="login-form" class="form">
+      <label>Email
+        <input type="email" name="email" required autocomplete="email" placeholder="you@example.com" />
+      </label>
+      <label>Пароль
+        <input type="password" name="password" required autocomplete="current-password" placeholder="••••••••" />
+      </label>
+      <button type="submit" class="btn primary full">Войти</button>
+    </form>
+
+    <form id="register-form" class="form hidden">
+      <label>ФИО
+        <input type="text" name="full_name" required minlength="2" placeholder="Иванов Иван Иванович" />
+      </label>
+      <label>Email
+        <input type="email" name="email" required autocomplete="email" placeholder="you@example.com" />
+      </label>
+      <label>Пароль
+        <input type="password" name="password" required minlength="8" placeholder="минимум 8 символов, буквы и цифры" />
+      </label>
+      <label>Роль
+        <select name="role" required>
+          <option value="participant">Участник</option>
+          <option value="speaker">Спикер</option>
+          <option value="admin">Администратор</option>
+        </select>
+      </label>
+      <label class="checkbox">
+        <input type="checkbox" name="consent_152fz" required />
+        <span>Согласен на обработку персональных данных в соответствии с ФЗ‑152</span>
+      </label>
+      <button type="submit" class="btn primary full">Создать аккаунт</button>
+    </form>
+  </div>
+</div>
+
+<!-- ============ ОСНОВНОЙ ЭКРАН ============ -->
+<div id="app-screen" class="hidden">
+  <header class="topbar">
+    <div class="brand small">
+      <div class="brand-logo">К+</div>
+      <span>Конф+</span>
+    </div>
+    <div class="user-box">
+      <span id="user-name" class="user-name"></span>
+      <span id="user-role" class="badge"></span>
+      <button id="logout-btn" class="btn ghost">Выйти</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <nav class="sidebar">
+      <button class="nav-item active" data-section="conferences">📅 Конференции</button>
+      <button class="nav-item" data-section="registrations">✅ Мои регистрации</button>
+      <button class="nav-item speaker-admin-only" data-section="abstracts">📝 Доклады</button>
+      <button class="nav-item" data-section="ratings">⭐ Оценки</button>
+      <button class="nav-item" data-section="invitations">✉️ Приглашения</button>
+      <button class="nav-item" data-section="fees">💰 Оргвзносы</button>
+      <button class="nav-item" data-section="hotels">🏨 Гостиница</button>
+      <button class="nav-item" data-section="mailings">📢 Рассылки</button>
+      <button class="nav-item admin-only" data-section="reports">📊 Отчёты</button>
+      <button class="nav-item" data-section="profile">👤 Профиль</button>
+    </nav>
+
+    <main id="content" class="content"></main>
+  </div>
+</div>
+
+<!-- ============ МОДАЛЬНОЕ ОКНО ============ -->
+<div id="modal" class="modal hidden">
+  <div class="modal-card">
+    <h3 id="modal-title"></h3>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<!-- ============ ТОСТЫ ============ -->
+<div id="toasts" class="toasts"></div>
+
+<script src="/static/js/app.js"></script>
+</body>
+</html>
