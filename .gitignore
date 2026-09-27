@@ -24,3 +24,4 @@ Thumbs.db
 *.sqlite3
 *.log
 logs/
+secrets.env
