@@ -1,0 +1,23 @@
+[Unit]
+Description=Conf-Plus FastAPI application
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=appuser
+Group=appuser
+WorkingDirectory=/opt/conf-plus
+EnvironmentFile=/etc/conf-plus/app.env
+ExecStart=/opt/conf-plus/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000
+Restart=always
+RestartSec=5
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+ReadWritePaths=/opt/conf-plus
+
+[Install]
+WantedBy=multi-user.target
