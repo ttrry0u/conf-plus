@@ -53,12 +53,7 @@ def request_hotel(
 
 @router.get("/hotels/my", response_model=list[schemas.HotelOut])
 def my_hotels(db: Session = Depends(get_db), user: models.User = Depends(get_current_user)):
-    return (
-        db.query(models.HotelBooking)
-        .filter_by(participant_id=user.id)
-        .order_by(models.HotelBooking.id.desc())
-        .all()
-    )
+    return db.query(models.HotelBooking).filter_by(participant_id=user.id).order_by(models.HotelBooking.id.desc()).all()
 
 
 @router.get("/hotels", response_model=list[schemas.HotelOut])

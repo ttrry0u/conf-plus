@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from typing import Literal, Optional
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator, model_validator
 
@@ -46,17 +46,19 @@ class UserOut(BaseModel):
     role: RoleLiteral
     is_online: bool
     consent_given: bool
-    consent_date: Optional[datetime]
+    consent_date: datetime | None
+    phone: str | None = None
     created_at: datetime
 
 
 class UserUpdate(BaseModel):
-    full_name: Optional[str] = Field(default=None, min_length=2, max_length=200)
+    full_name: str | None = Field(default=None, min_length=2, max_length=200)
+    phone: str | None = Field(default=None, max_length=20)
 
 
 class TokenOut(BaseModel):
     access_token: str
-    token_type: str = "bearer"
+    token_type: str = "bearer"  # noqa: S105 — стандартное значение поля JWT, не пароль
     user: UserOut
 
 
@@ -67,7 +69,7 @@ class ConferenceCreate(BaseModel):
     location: str = Field(default="", max_length=200)
     start_date: datetime
     end_date: datetime
-    registration_deadline: Optional[datetime] = None
+    registration_deadline: datetime | None = None
 
     @model_validator(mode="after")
     def validate_dates(self):
@@ -79,12 +81,12 @@ class ConferenceCreate(BaseModel):
 
 
 class ConferenceUpdate(BaseModel):
-    title: Optional[str] = Field(default=None, min_length=3, max_length=200)
-    description: Optional[str] = Field(default=None, max_length=5000)
-    location: Optional[str] = Field(default=None, max_length=200)
-    start_date: Optional[datetime] = None
-    end_date: Optional[datetime] = None
-    registration_deadline: Optional[datetime] = None
+    title: str | None = Field(default=None, min_length=3, max_length=200)
+    description: str | None = Field(default=None, max_length=5000)
+    location: str | None = Field(default=None, max_length=200)
+    start_date: datetime | None = None
+    end_date: datetime | None = None
+    registration_deadline: datetime | None = None
 
 
 class ConferenceOut(BaseModel):
@@ -95,8 +97,8 @@ class ConferenceOut(BaseModel):
     location: str
     start_date: datetime
     end_date: datetime
-    registration_deadline: Optional[datetime]
-    created_by: Optional[int]
+    registration_deadline: datetime | None
+    created_by: int | None
     created_at: datetime
 
 
@@ -119,9 +121,9 @@ class AbstractCreate(BaseModel):
 
 
 class AbstractUpdate(BaseModel):
-    title: Optional[str] = Field(default=None, min_length=3, max_length=300)
-    content: Optional[str] = Field(default=None, min_length=10, max_length=20000)
-    duration_minutes: Optional[int] = Field(default=None, gt=0, le=600)
+    title: str | None = Field(default=None, min_length=3, max_length=300)
+    content: str | None = Field(default=None, min_length=10, max_length=20000)
+    duration_minutes: int | None = Field(default=None, gt=0, le=600)
 
 
 class AbstractOut(BaseModel):
@@ -139,7 +141,7 @@ class AbstractOut(BaseModel):
 # ==================== RATINGS ====================
 class RatingCreate(BaseModel):
     score: int = Field(ge=1, le=5, description="Оценка от 1 до 5")
-    review: Optional[str] = Field(default=None, max_length=2000)
+    review: str | None = Field(default=None, max_length=2000)
 
 
 class RatingOut(BaseModel):
@@ -148,7 +150,7 @@ class RatingOut(BaseModel):
     abstract_id: int
     user_id: int
     score: int
-    review: Optional[str]
+    review: str | None
     created_at: datetime
 
 
@@ -174,7 +176,7 @@ class InvitationStatusUpdate(BaseModel):
 # ==================== FEES ====================
 class FeeCreate(BaseModel):
     conference_id: int
-    participant_id: Optional[int] = None
+    participant_id: int | None = None
     amount: float = Field(gt=0)
 
 
@@ -185,7 +187,7 @@ class FeeOut(BaseModel):
     participant_id: int
     amount: float
     status: str
-    paid_at: Optional[datetime]
+    paid_at: datetime | None
 
 
 # ==================== HOTELS ====================
@@ -223,7 +225,7 @@ class HotelStatusUpdate(BaseModel):
 # ==================== MAILINGS ====================
 class MailingCreate(BaseModel):
     conference_id: int
-    participant_id: Optional[int] = None
+    participant_id: int | None = None
     subject: str = Field(min_length=1, max_length=300)
     body: str = Field(min_length=1, max_length=20000)
 
@@ -236,4 +238,4 @@ class MailingOut(BaseModel):
     subject: str
     body: str
     status: str
-    sent_at: Optional[datetime]
+    sent_at: datetime | None

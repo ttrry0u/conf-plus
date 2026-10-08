@@ -19,7 +19,9 @@ def conference_report(
     if not conf:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Конференция не найдена")
 
-    participants_count = db.query(func.count(models.Registration.id)).filter_by(conference_id=conference_id).scalar() or 0
+    participants_count = (
+        db.query(func.count(models.Registration.id)).filter_by(conference_id=conference_id).scalar() or 0
+    )
 
     abstracts_q = db.query(models.Abstract).filter_by(conference_id=conference_id)
     abstracts_total = abstracts_q.count()
@@ -42,7 +44,9 @@ def conference_report(
     )
 
     fees_paid = db.query(func.count(models.Fee.id)).filter_by(conference_id=conference_id, status="paid").scalar() or 0
-    fees_pending = db.query(func.count(models.Fee.id)).filter_by(conference_id=conference_id, status="pending").scalar() or 0
+    fees_pending = (
+        db.query(func.count(models.Fee.id)).filter_by(conference_id=conference_id, status="pending").scalar() or 0
+    )
     fees_total_amount = (
         db.query(func.coalesce(func.sum(models.Fee.amount), 0.0))
         .filter_by(conference_id=conference_id, status="paid")

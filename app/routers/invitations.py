@@ -31,10 +31,7 @@ def create_invitation(
 @router.get("/invitations/my", response_model=list[schemas.InvitationOut])
 def my_invitations(db: Session = Depends(get_db), user: models.User = Depends(get_current_user)):
     return (
-        db.query(models.Invitation)
-        .filter_by(participant_id=user.id)
-        .order_by(models.Invitation.sent_at.desc())
-        .all()
+        db.query(models.Invitation).filter_by(participant_id=user.id).order_by(models.Invitation.sent_at.desc()).all()
     )
 
 

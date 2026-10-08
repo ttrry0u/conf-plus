@@ -1,4 +1,4 @@
-from datetime import datetime   # <-- добавьте это
+from datetime import datetime  # <-- добавьте это
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import func
@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from .. import models, schemas
 from ..database import get_db
-from ..deps import get_current_user, require_roles
+from ..deps import require_roles
 
 router = APIRouter(prefix="/api", tags=["Оценки докладов"])
 
@@ -39,11 +39,7 @@ def rate_abstract(
     if payload.score < 1 or payload.score > 5:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Оценка должна быть в диапазоне от 1 до 5")
 
-    existing = (
-        db.query(models.Rating)
-        .filter_by(abstract_id=abstract_id, user_id=user.id)
-        .first()
-    )
+    existing = db.query(models.Rating).filter_by(abstract_id=abstract_id, user_id=user.id).first()
     if existing:
         raise HTTPException(status.HTTP_409_CONFLICT, "Вы уже оценивали этот доклад")
 

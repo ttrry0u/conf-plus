@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import (
     Boolean,
@@ -19,7 +19,7 @@ from .database import Base
 
 def utcnow() -> datetime:
     """Единая точка получения текущего времени (UTC, naive — для совместимости с PostgreSQL TIMESTAMP)."""
-    return datetime.now(timezone.utc).replace(tzinfo=None)
+    return datetime.now(UTC).replace(tzinfo=None)
 
 
 # ---------- Участники (Participant) ----------
@@ -37,6 +37,7 @@ class User(Base):
     # 152-ФЗ: явная фиксация согласия субъекта на обработку ПДн
     consent_given: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     consent_date: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    phone: Mapped[str | None] = mapped_column(String(20), nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=utcnow)
 
@@ -44,9 +45,7 @@ class User(Base):
 # ---------- Конференции ----------
 class Conference(Base):
     __tablename__ = "conferences"
-    __table_args__ = (
-        CheckConstraint("end_date > start_date", name="ck_conf_dates"),
-    )
+    __table_args__ = (CheckConstraint("end_date > start_date", name="ck_conf_dates"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     title: Mapped[str] = mapped_column(String(200), nullable=False)
@@ -62,9 +61,7 @@ class Conference(Base):
 # ---------- Регистрации участников на конференцию ----------
 class Registration(Base):
     __tablename__ = "registrations"
-    __table_args__ = (
-        UniqueConstraint("conference_id", "participant_id", name="uq_registration"),
-    )
+    __table_args__ = (UniqueConstraint("conference_id", "participant_id", name="uq_registration"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     conference_id: Mapped[int] = mapped_column(ForeignKey("conferences.id", ondelete="CASCADE"), nullable=False)
@@ -76,9 +73,7 @@ class Registration(Base):
 # ---------- Тезисы / доклады ----------
 class Abstract(Base):
     __tablename__ = "abstracts"
-    __table_args__ = (
-        CheckConstraint("duration_minutes > 0", name="ck_abstract_duration_positive"),
-    )
+    __table_args__ = (CheckConstraint("duration_minutes > 0", name="ck_abstract_duration_positive"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     conference_id: Mapped[int] = mapped_column(ForeignKey("conferences.id", ondelete="CASCADE"), nullable=False)
@@ -133,16 +128,16 @@ class Fee(Base):
 # ---------- Гостиница ----------
 class HotelBooking(Base):
     __tablename__ = "hotel_bookings"
-    __table_args__ = (
-        CheckConstraint("check_out > check_in", name="ck_hotel_dates"),
-    )
+    __table_args__ = (CheckConstraint("check_out > check_in", name="ck_hotel_dates"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     conference_id: Mapped[int] = mapped_column(ForeignKey("conferences.id", ondelete="CASCADE"), nullable=False)
     participant_id: Mapped[int] = mapped_column(ForeignKey("participants.id", ondelete="CASCADE"), nullable=False)
     check_in: Mapped[datetime] = mapped_column(Date, nullable=False)
     check_out: Mapped[datetime] = mapped_column(Date, nullable=False)
-    status: Mapped[str] = mapped_column(String(20), nullable=False, default="requested")  # requested | confirmed | cancelled
+    status: Mapped[str] = mapped_column(
+        String(20), nullable=False, default="requested"
+    )  # requested | confirmed | cancelled
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=utcnow)
 
 
@@ -158,3 +153,15 @@ class Mailing(Base):
     # По ТЗ: sent | failed
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="sent")
     sent_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, default=utcnow)
+
+
+# ---------- Уведомления ----------
+class Notification(Base):
+    __tablename__ = "notifications"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("participants.id", ondelete="CASCADE"), nullable=False)
+    subject: Mapped[str] = mapped_column(String(300), nullable=False)
+    body: Mapped[str] = mapped_column(Text, nullable=False)
+    is_read: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=utcnow)

@@ -1,3 +1,4 @@
+# Основные
 fastapi==0.118.0
 uvicorn[standard]==0.37.0
 sqlalchemy==2.0.43
@@ -7,3 +8,10 @@ pydantic-settings==2.11.0
 email-validator==2.3.0
 PyJWT==2.10.1
 bcrypt==4.3.0
+
+# Разработка и тестирование
+pytest
+pytest-cov
+httpx
+ruff
+alembic
