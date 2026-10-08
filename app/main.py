@@ -38,6 +38,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 # Глобальная обработка ошибок БД (по ТЗ, Рис 6)
 @app.exception_handler(SQLAlchemyError)
 async def sqlalchemy_exception_handler(request: Request, exc: SQLAlchemyError):

@@ -24,3 +24,17 @@ Thumbs.db
 *.sqlite3
 *.log
 logs/
+
+# test artifacts
+.coverage
+htmlcov/
+coverage.xml
+.mypy_cache/
+
+# backups / dumps
+backups/
+*.dump
+*.sql
+
+# alembic local
+alembic/versions/__pycache__/

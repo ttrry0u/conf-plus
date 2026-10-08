@@ -19,7 +19,10 @@ def get_current_user(
         payload = decode_token(credentials.credentials)
         user_id = int(payload.get("sub"))
     except Exception:
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Недействительный или просроченный токен")
+        raise HTTPException(
+            status.HTTP_401_UNAUTHORIZED,
+            "Недействительный или просроченный токен",
+        ) from None
     user = db.get(models.User, user_id)
     if user is None:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Пользователь не найден")
@@ -29,7 +32,10 @@ def get_current_user(
 def require_roles(*roles: str):
     def checker(user: models.User = Depends(get_current_user)) -> models.User:
         if user.role not in roles:
-            raise HTTPException(status.HTTP_403_FORBIDDEN, "Недостаточно прав для выполнения операции")
+            raise HTTPException(
+                status.HTTP_403_FORBIDDEN,
+                "Недостаточно прав для выполнения операции",
+            )
         return user
 
     return checker

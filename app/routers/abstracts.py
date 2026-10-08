@@ -47,12 +47,7 @@ def list_abstracts(conference_id: int, db: Session = Depends(get_db)):
 
 @router.get("/abstracts/my", response_model=list[schemas.AbstractOut])
 def my_abstracts(db: Session = Depends(get_db), user: models.User = Depends(get_current_user)):
-    return (
-        db.query(models.Abstract)
-        .filter_by(author_id=user.id)
-        .order_by(models.Abstract.submitted_at.desc())
-        .all()
-    )
+    return db.query(models.Abstract).filter_by(author_id=user.id).order_by(models.Abstract.submitted_at.desc()).all()
 
 
 @router.get("/abstracts/{abstract_id}", response_model=schemas.AbstractOut)

@@ -1,16 +1,20 @@
-from datetime import datetime   # <-- добавьте
+from datetime import datetime  # <-- добавьте
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from .. import models, schemas
 from ..database import get_db
-from ..deps import get_current_user, require_roles
+from ..deps import get_current_user
 
 router = APIRouter(prefix="/api", tags=["Регистрации на конференцию"])
 
 
-@router.post("/conferences/{conference_id}/registrations", response_model=schemas.RegistrationOut, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/conferences/{conference_id}/registrations",
+    response_model=schemas.RegistrationOut,
+    status_code=status.HTTP_201_CREATED,
+)
 def register_for_conference(
     conference_id: int,
     db: Session = Depends(get_db),
@@ -28,11 +32,7 @@ def register_for_conference(
     if now > conf.end_date:
         raise HTTPException(status.HTTP_409_CONFLICT, "Конференция уже завершена")
 
-    existing = (
-        db.query(models.Registration)
-        .filter_by(conference_id=conference_id, participant_id=user.id)
-        .first()
-    )
+    existing = db.query(models.Registration).filter_by(conference_id=conference_id, participant_id=user.id).first()
     if existing:
         raise HTTPException(status.HTTP_409_CONFLICT, "Вы уже зарегистрированы на эту конференцию")
 

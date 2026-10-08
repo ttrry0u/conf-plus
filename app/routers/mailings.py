@@ -22,8 +22,7 @@ def create_mailing(
         targets = [payload.participant_id]
     else:
         targets = [
-            r.participant_id
-            for r in db.query(models.Registration).filter_by(conference_id=payload.conference_id).all()
+            r.participant_id for r in db.query(models.Registration).filter_by(conference_id=payload.conference_id).all()
         ]
         if not targets:
             raise HTTPException(status.HTTP_409_CONFLICT, "Нет зарегистрированных участников для рассылки")
@@ -50,12 +49,7 @@ def create_mailing(
 
 @router.get("/mailings/my", response_model=list[schemas.MailingOut])
 def my_mailings(db: Session = Depends(get_db), user: models.User = Depends(get_current_user)):
-    return (
-        db.query(models.Mailing)
-        .filter_by(participant_id=user.id)
-        .order_by(models.Mailing.id.desc())
-        .all()
-    )
+    return db.query(models.Mailing).filter_by(participant_id=user.id).order_by(models.Mailing.id.desc()).all()
 
 
 @router.get("/conferences/{conference_id}/mailings", response_model=list[schemas.MailingOut])

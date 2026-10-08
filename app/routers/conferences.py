@@ -1,11 +1,11 @@
-from datetime import datetime, timedelta   # <-- добавьте datetime
+from datetime import datetime, timedelta  # <-- добавьте datetime
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from .. import models, schemas
 from ..database import get_db
-from ..deps import get_current_user, require_roles
+from ..deps import require_roles
 
 router = APIRouter(prefix="/api/conferences", tags=["Конференции"])
 
@@ -54,7 +54,9 @@ def update_conference(
     if conf.end_date <= conf.start_date:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Дата окончания конференции должна быть позже даты начала")
     if conf.registration_deadline and conf.registration_deadline > conf.end_date:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Дата окончания регистрации не может быть позже окончания конференции")
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST, "Дата окончания регистрации не может быть позже окончания конференции"
+        )
 
     db.commit()
     db.refresh(conf)
