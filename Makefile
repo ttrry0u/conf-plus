@@ -1,10 +1,10 @@
 SHELL := /bin/bash
 .SHELLFLAGS := -c
 
-VENV_BIN := .venv/Scripts
-RUFF := $(VENV_BIN)/ruff.exe
-PYTEST := $(VENV_BIN)/pytest.exe
-ALEMBIC := $(VENV_BIN)/alembic.exe
+VENV_BIN := .venv/bin
+RUFF := $(VENV_BIN)/ruff
+PYTEST := $(VENV_BIN)/pytest
+ALEMBIC := $(VENV_BIN)/alembic
 
 DB_NAME := confplus
 DB_USER := confplus_user
@@ -62,3 +62,12 @@ verify: lint test security
 clean:
 	rm -rf htmlcov .coverage .pytest_cache .ruff_cache
 	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+
+up: ## Запустить контейнеры
+	docker compose up -d --build
+
+down: ## Остановить контейнеры
+	docker compose down
+
+container-check: ## Проверка контейнеров
+	bash scripts/container-check.sh

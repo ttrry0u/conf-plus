@@ -1,0 +1,48 @@
+services:
+  db:
+    image: postgres:18
+    container_name: conf-plus-db
+    restart: unless-stopped
+    env_file: .env.db
+    volumes:
+      - pgdata:/var/lib/postgresql  # Volume для сохранения данных (Требование 9)
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits: { cpus: '0.50', memory: 512M } # Лимиты ресурсов (Требование 11)
+    # Порт 5432 НЕ публикуем наружу (Требование 8)
+
+  app:
+    build: .
+    container_name: conf-plus-app
+    restart: unless-stopped
+    env_file: .env.app
+    depends_on:
+      db:
+        condition: service_healthy # Порядок запуска (Требование 7)
+    ports:
+      - "8000:8000"
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/docs')"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    stop_grace_period: 10s # Время на graceful shutdown (Требование 5)
+    deploy:
+      resources:
+        limits: { cpus: '0.50', memory: 512M }
+
+volumes:
+  pgdata:
+
+networks:
+  backend:
+    driver: bridge
