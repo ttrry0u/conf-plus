@@ -38,3 +38,5 @@ backups/
 
 # alembic local
 alembic/versions/__pycache__/
+.env.app
+.env.db
