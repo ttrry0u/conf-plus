@@ -33,9 +33,7 @@ test-job:
     POSTGRES_DB: confplus_test
     POSTGRES_USER: confplus_user
     POSTGRES_PASSWORD: 123
-    # ДОБАВЛЯЕМ ЭТУ СТРОКУ (чтобы main.py при импорте подключался к базе в CI):
     DATABASE_URL: "postgresql+psycopg://confplus_user:123@postgres:5432/confplus_test"
-    # А эта строка у вас уже была:
     TEST_DATABASE_URL: "postgresql+psycopg://confplus_user:123@postgres:5432/confplus_test"
   script:
     - source .venv/bin/activate
@@ -45,3 +43,6 @@ test-job:
     paths:
       - htmlcov/
     expire_in: 1 week
+
+artifacts:
+  archive: false
