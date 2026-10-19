@@ -2,7 +2,6 @@ stages:
   - lint
   - test
 
-# Кэшируем зависимости (Пункт 8)
 cache:
   paths:
     - .venv/
@@ -10,36 +9,35 @@ cache:
 default:
   image: python:3.11-slim
   before_script:
-    # Ставим make и зависимости для БД
     - apt-get update && apt-get install -y make gcc libpq-dev
-    # Создаем виртуальное окружение, так как Makefile ссылается на .venv/bin/...
     - python -m venv .venv
     - source .venv/bin/activate
     - make install
 
 lint-job:
   stage: lint
+  tags:
+    - вщсdocker  # <--- тег
   script:
     - source .venv/bin/activate
     - make lint
 
 test-job:
   stage: test
+  tags:
+    - вщсdocker  # <--- тег
   services:
-    # Поднимаем отдельную тестовую БД (Пункт 6)
     - name: postgres:18
       alias: postgres
   variables:
     POSTGRES_DB: confplus_test
     POSTGRES_USER: confplus_user
     POSTGRES_PASSWORD: 123
-    # Указываем приложению, где искать БД внутри CI (обратите внимание на host: postgres)
     TEST_DATABASE_URL: "postgresql+psycopg://confplus_user:123@postgres:5432/confplus_test"
   script:
     - source .venv/bin/activate
     - make test
   artifacts:
-    # Сохраняем отчет (Пункт 7) даже если тесты упали
     when: always
     paths:
       - htmlcov/
