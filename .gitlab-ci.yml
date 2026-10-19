@@ -25,7 +25,7 @@ lint-job:
 test-job:
   stage: test
   tags:
-    - вщсdocker  # <--- тег
+    - вщсdocker
   services:
     - name: postgres:18
       alias: postgres
@@ -38,7 +38,7 @@ test-job:
   script:
     - source .venv/bin/activate
     - make test
-  artifacts:
-    when: always
-    reports:
-      junit: report.xml
+  cache:
+    paths:
+      - report.xml
+      - htmlcov/
