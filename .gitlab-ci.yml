@@ -40,9 +40,5 @@ test-job:
     - make test
   artifacts:
     when: always
-    paths:
-      - htmlcov/
-    expire_in: 1 week
-
-artifacts:
-  archive: false
+    reports:
+      junit: report.xml
