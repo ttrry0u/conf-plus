@@ -97,11 +97,10 @@ backup-job:
   before_script:
     - apt-get update && apt-get install -y postgresql-client make
   script:
-    - make backup
-  artifacts:
+    - make backup DB_HOST=postgres DB_NAME=confplus DB_USER=confplus_user
+  cache:
     paths:
       - backups/
-    expire_in: 1 week
 
 build-job:
   stage: build
