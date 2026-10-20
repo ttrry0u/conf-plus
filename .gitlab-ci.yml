@@ -53,6 +53,7 @@ security-job:
   image:
     name: zricethezav/gitleaks:latest
     entrypoint: [""]
+  before_script: []
   script:
     - gitleaks detect --source . -v
 
