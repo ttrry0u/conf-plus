@@ -1,0 +1,135 @@
+stages:
+  - lint
+  - test
+  - security
+  - migrate
+  - backup
+  - build
+  - scan-image
+  - publish
+
+variables:
+  DOCKER_IMAGE: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+
+cache:
+  paths:
+    - .venv/
+
+default:
+  image: python:3.11-slim
+  tags:
+    - вщсdocker
+  before_script:
+    - apt-get update && apt-get install -y make gcc libpq-dev
+    - python -m venv .venv
+    - source .venv/bin/activate
+    - make install
+
+lint-job:
+  stage: lint
+  script:
+    - source .venv/bin/activate
+    - make lint
+
+test-job:
+  stage: test
+  services:
+    - name: postgres:18
+      alias: postgres
+  variables:
+    POSTGRES_DB: confplus_test
+    POSTGRES_USER: confplus_user
+    POSTGRES_PASSWORD: 123
+    DATABASE_URL: "postgresql+psycopg://confplus_user:123@postgres:5432/confplus_test"
+    TEST_DATABASE_URL: "postgresql+psycopg://confplus_user:123@postgres:5432/confplus_test"
+  script:
+    - source .venv/bin/activate
+    - make test
+  cache:
+    paths:
+      - report.xml
+      - htmlcov/
+
+security-job:
+  stage: security
+  image:
+    name: zricethezav/gitleaks:latest
+    entrypoint: [""]
+  before_script: []
+  script:
+    - gitleaks detect --source . -v
+
+audit-job:
+  stage: security
+  tags:
+    - вщсdocker
+  script:
+    - source .venv/bin/activate
+    - pip install pip-audit
+    - pip-audit -r requirements.txt
+
+migrate-job:
+  stage: migrate
+  services:
+    - name: postgres:18
+      alias: postgres
+  variables:
+    POSTGRES_DB: confplus_test
+    POSTGRES_USER: confplus_user
+    POSTGRES_PASSWORD: 123
+    DATABASE_URL: "postgresql+psycopg://confplus_user:123@postgres:5432/confplus_test"
+  script:
+    - source .venv/bin/activate
+    - make migrate
+
+backup-job:
+  stage: backup
+  tags:
+    - вщсdocker
+  services:
+    - name: postgres:18
+      alias: postgres
+  variables:
+    POSTGRES_DB: confplus
+    POSTGRES_USER: confplus_user
+    POSTGRES_PASSWORD: 123
+    DATABASE_URL: "postgresql+psycopg://confplus_user:123@postgres:5432/confplus"
+  before_script:
+    - apt-get update && apt-get install -y postgresql-client make
+  script:
+    - make backup DB_HOST=postgres DB_NAME=confplus DB_USER=confplus_user
+  cache:
+    paths:
+      - backups/
+
+build-job:
+  stage: build
+  image: docker:24.0.5-cli
+  variables:
+    BUILDX_NO_DEFAULT_ATTESTATIONS: "1"
+  before_script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+  script:
+    - docker build -t $DOCKER_IMAGE .
+    - docker push $DOCKER_IMAGE
+
+trivy-scan-job:
+  stage: scan-image
+  image:
+    name: aquasec/trivy:latest
+    entrypoint: [""]
+  before_script: []
+  script:
+    - trivy image --exit-code 1 --severity CRITICAL $DOCKER_IMAGE
+
+publish-job:
+  stage: publish
+  image: docker:24.0.5-cli
+  before_script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+  script:
+    - docker pull $DOCKER_IMAGE
+    - docker tag $DOCKER_IMAGE $CI_REGISTRY_IMAGE:latest
+    - docker push $CI_REGISTRY_IMAGE:latest
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"

@@ -1,0 +1,6 @@
+# Защита критических файлов
+/tests/              @root
+/Makefile            @root
+/pytest.ini          @root
+/pyproject.toml      @root
+/.gitlab-ci.yml      @root
