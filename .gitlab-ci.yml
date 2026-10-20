@@ -1,6 +1,13 @@
 stages:
   - lint
   - test
+  - security
+  - migrate
+  - build
+  - publish
+
+variables:
+  DOCKER_IMAGE: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
 
 cache:
   paths:
@@ -8,6 +15,8 @@ cache:
 
 default:
   image: python:3.11-slim
+  tags:
+    - вщсdocker
   before_script:
     - apt-get update && apt-get install -y make gcc libpq-dev
     - python -m venv .venv
@@ -16,16 +25,12 @@ default:
 
 lint-job:
   stage: lint
-  tags:
-    - вщсdocker  # <--- тег
   script:
     - source .venv/bin/activate
     - make lint
 
 test-job:
   stage: test
-  tags:
-    - вщсdocker
   services:
     - name: postgres:18
       alias: postgres
@@ -42,3 +47,49 @@ test-job:
     paths:
       - report.xml
       - htmlcov/
+
+security-job:
+  stage: security
+  image:
+    name: zricethezav/gitleaks:latest
+    entrypoint: [""]
+  before_script: []
+  script:
+    - gitleaks detect --source . -v
+
+migrate-job:
+  stage: migrate
+  services:
+    - name: postgres:18
+      alias: postgres
+  variables:
+    POSTGRES_DB: confplus_test
+    POSTGRES_USER: confplus_user
+    POSTGRES_PASSWORD: 123
+    DATABASE_URL: "postgresql+psycopg://confplus_user:123@postgres:5432/confplus_test"
+  script:
+    - source .venv/bin/activate
+    - make migrate
+
+build-job:
+  stage: build
+  image: docker:24.0.5-cli
+  variables:
+    BUILDX_NO_DEFAULT_ATTESTATIONS: "1"   # <--- ДОБАВЛЕНА ЭТА СТРОКА
+  before_script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+  script:
+    - docker build -t $DOCKER_IMAGE .
+    - docker push $DOCKER_IMAGE
+
+publish-job:
+  stage: publish
+  image: docker:24.0.5-cli
+  before_script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+  script:
+    - docker pull $DOCKER_IMAGE
+    - docker tag $DOCKER_IMAGE $CI_REGISTRY_IMAGE:latest
+    - docker push $CI_REGISTRY_IMAGE:latest
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
