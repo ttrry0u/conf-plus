@@ -118,6 +118,7 @@ trivy-scan-job:
   image:
     name: aquasec/trivy:latest
     entrypoint: [""]
+  before_script: []
   script:
     - trivy image --exit-code 1 --severity CRITICAL $DOCKER_IMAGE
 
