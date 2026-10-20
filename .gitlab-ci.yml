@@ -3,7 +3,9 @@ stages:
   - test
   - security
   - migrate
+  - backup
   - build
+  - scan-image
   - publish
 
 variables:
@@ -57,6 +59,15 @@ security-job:
   script:
     - gitleaks detect --source . -v
 
+audit-job:
+  stage: security
+  tags:
+    - вщсdocker
+  script:
+    - source .venv/bin/activate
+    - pip install pip-audit
+    - pip-audit -r requirements.txt
+
 migrate-job:
   stage: migrate
   services:
@@ -71,6 +82,27 @@ migrate-job:
     - source .venv/bin/activate
     - make migrate
 
+backup-job:
+  stage: backup
+  tags:
+    - вщсdocker
+  services:
+    - name: postgres:18
+      alias: postgres
+  variables:
+    POSTGRES_DB: confplus
+    POSTGRES_USER: confplus_user
+    POSTGRES_PASSWORD: 123
+    DATABASE_URL: "postgresql+psycopg://confplus_user:123@postgres:5432/confplus"
+  before_script:
+    - apt-get update && apt-get install -y postgresql-client make
+  script:
+    - make backup
+  artifacts:
+    paths:
+      - backups/
+    expire_in: 1 week
+
 build-job:
   stage: build
   image: docker:24.0.5-cli
@@ -81,6 +113,14 @@ build-job:
   script:
     - docker build -t $DOCKER_IMAGE .
     - docker push $DOCKER_IMAGE
+
+trivy-scan-job:
+  stage: scan-image
+  image:
+    name: aquasec/trivy:latest
+    entrypoint: [""]
+  script:
+    - trivy image --exit-code 1 --severity CRITICAL $DOCKER_IMAGE
 
 publish-job:
   stage: publish
