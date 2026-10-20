@@ -106,7 +106,7 @@ build-job:
   stage: build
   image: docker:24.0.5-cli
   variables:
-    BUILDX_NO_DEFAULT_ATTESTATIONS: "1"   # <--- ДОБАВЛЕНА ЭТА СТРОКА
+    BUILDX_NO_DEFAULT_ATTESTATIONS: "1"
   before_script:
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
   script:
