@@ -61,6 +61,8 @@ security-job:
 
 audit-job:
   stage: security
+  tags:
+    - вщсdocker
   script:
     - source .venv/bin/activate
     - pip install pip-audit
@@ -82,6 +84,8 @@ migrate-job:
 
 backup-job:
   stage: backup
+  tags:
+    - вщсdocker
   services:
     - name: postgres:18
       alias: postgres
@@ -102,7 +106,7 @@ build-job:
   stage: build
   image: docker:24.0.5-cli
   variables:
-    BUILDX_NO_DEFAULT_ATTESTATIONS: "1"
+    BUILDX_NO_DEFAULT_ATTESTATIONS: "1"   # <--- ДОБАВЛЕНА ЭТА СТРОКА
   before_script:
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
   script:
