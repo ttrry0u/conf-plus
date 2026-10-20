@@ -74,12 +74,6 @@ migrate-job:
 build-job:
   stage: build
   image: docker:24.0.5-cli
-  services:
-    - name: docker:24.0.5-dind
-      command: ["--insecure-registry", "192.168.1.5:8093"]
-  variables:
-    DOCKER_HOST: tcp://docker:2375
-    DOCKER_TLS_CERTDIR: ""
   before_script:
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
   script:
@@ -89,12 +83,6 @@ build-job:
 publish-job:
   stage: publish
   image: docker:24.0.5-cli
-  services:
-    - name: docker:24.0.5-dind
-      command: ["--insecure-registry", "192.168.1.5:8093"]
-  variables:
-    DOCKER_HOST: tcp://docker:2375
-    DOCKER_TLS_CERTDIR: ""
   before_script:
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
   script:
