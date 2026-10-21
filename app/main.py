@@ -1,6 +1,7 @@
 from pathlib import Path
 
-from fastapi import FastAPI, Request
+import socket
+from fastapi import FastAPI, Request, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -60,6 +61,14 @@ async def global_exception_handler(request: Request, exc: Exception):
 # Создание таблиц (для MVP; в проде — Alembic-миграции)
 Base.metadata.create_all(bind=engine)
 
+# Создаем роутер для отладки
+debug_router = APIRouter(tags=["debug"])
+
+@debug_router.get("/whoami")
+def get_instance_id():
+    # Возвращает hostname контейнера (например, "a1b2c3d4e5f6")
+    return {"instance": socket.gethostname()}
+
 # Подключение роутеров
 app.include_router(auth.router)
 app.include_router(conferences.router)
@@ -71,6 +80,7 @@ app.include_router(fees.router)
 app.include_router(hotels.router)
 app.include_router(mailings.router)
 app.include_router(reports.router)
+app.include_router(debug_router)
 
 
 @app.get("/health", tags=["Служебные"])
