@@ -40,3 +40,6 @@ backups/
 alembic/versions/__pycache__/
 .env.app
 .env.db
+
+# pytest artifacts
+report.xml
