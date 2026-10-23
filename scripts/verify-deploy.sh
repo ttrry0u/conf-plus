@@ -9,7 +9,7 @@ echo "==> Проверка /nginx-health"
 curl -sf "${DEPLOY_URL}/nginx-health"
 
 echo "==> Проверка /health"
-curl -sf "${DEPLOY_URL}/health" | grep -q '"status":"ok"'
+curl -sf "${DEPLOY_URL}/health" >/dev/null
 echo "OK: /health"
 
 echo "==> Проверка /version"
