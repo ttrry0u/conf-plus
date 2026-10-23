@@ -44,26 +44,26 @@ echo "==> Restarting services"
 $COMPOSE_CMD -f "$COMPOSE_FILE" up -d --remove-orphans
 
 echo "==> Waiting for /nginx-health"
-for i in $(seq 1 20); do
+for i in $(seq 1 60); do
     if curl -sf http://localhost:8080/nginx-health >/dev/null 2>&1; then
         echo "OK: nginx alive"
         break
     fi
     sleep 2
-    if [ "$i" -eq 20 ]; then
+    if [ "$i" -eq 60 ]; then
         echo "FAIL: nginx не отвечает на /nginx-health"
         exit 1
     fi
 done
 
 echo "==> Waiting for /health"
-for i in $(seq 1 20); do
+for i in $(seq 1 60); do
     if curl -sf http://localhost:8080/health >/dev/null; then
         echo "OK: /health"
         break
     fi
     sleep 2
-    if [ "$i" -eq 20 ]; then
+    if [ "$i" -eq 60 ]; then
         echo "FAIL: /health не отвечает"
         exit 1
     fi
