@@ -42,6 +42,8 @@ services:
       - "8080:80"
     volumes:
       - ./nginx.deploy.conf:/etc/nginx/nginx.conf:ro,Z
+    sysctls:
+      - net.ipv4.ip_unprivileged_port_start=0
     depends_on:
       - app
     networks:
