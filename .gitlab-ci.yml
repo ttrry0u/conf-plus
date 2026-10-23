@@ -171,7 +171,7 @@ deploy-job:
     - APP_VERSION=${CI_COMMIT_TAG:-$CI_COMMIT_SHA}
     - echo "Deploying $APP_VERSION"
     - scp docker-compose.deploy.yml nginx.deploy.conf scripts/deploy.sh scripts/rollback.sh "$DEPLOY_USER@$DEPLOY_HOST:/opt/conf-plus-deploy/"
-    - ssh "$DEPLOY_USER@$DEPLOY_HOST" "export CI_REGISTRY_USER='$CI_REGISTRY_USER' CI_REGISTRY_PASSWORD='$CI_REGISTRY_PASSWORD' && cd /opt/conf-plus-deploy && chmod +x deploy.sh rollback.sh && ./deploy.sh $APP_VERSION"
+    - ssh "$DEPLOY_USER@$DEPLOY_HOST" "export CI_REGISTRY_USER='$CI_REGISTRY_USER' CI_REGISTRY_PASSWORD='$CI_REGISTRY_PASSWORD' && cd /opt/conf-plus-deploy && sed -i 's/\r$//' deploy.sh rollback.sh && chmod +x deploy.sh rollback.sh && ./deploy.sh $APP_VERSION"
 
 verify-deploy-job:
   stage: verify-deploy

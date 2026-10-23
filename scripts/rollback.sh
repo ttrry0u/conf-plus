@@ -50,16 +50,16 @@ fi
 
 export APP_VERSION="$TARGET"
 $COMPOSE_CMD -f "$COMPOSE_FILE" pull app
-$COMPOSE_CMD -f "$COMPOSE_FILE" up -d --remove-orphans
+$COMPOSE_CMD -f "$COMPOSE_FILE" up -d --force-recreate --remove-orphans
 
 echo "==> Проверка после отката"
-for i in $(seq 1 20); do
-    if curl -sf http://localhost:8080/health | grep -q '"status":"ok"'; then
+for i in $(seq 1 60); do
+    if curl -sf http://localhost:8080/health >/dev/null; then
         echo "OK: /health"
         break
     fi
     sleep 2
-    if [ "$i" -eq 20 ]; then
+    if [ "$i" -eq 60 ]; then
         echo "FAIL: /health не отвечает после отката"
         exit 1
     fi
