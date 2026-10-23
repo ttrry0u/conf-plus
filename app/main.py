@@ -1,7 +1,8 @@
+import os
+import socket
 from pathlib import Path
 
-import socket
-from fastapi import FastAPI, Request, APIRouter
+from fastapi import APIRouter, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -64,10 +65,12 @@ Base.metadata.create_all(bind=engine)
 # Создаем роутер для отладки
 debug_router = APIRouter(tags=["debug"])
 
+
 @debug_router.get("/whoami")
 def get_instance_id():
     # Возвращает hostname контейнера (например, "a1b2c3d4e5f6")
     return {"instance": socket.gethostname()}
+
 
 # Подключение роутеров
 app.include_router(auth.router)
@@ -86,6 +89,16 @@ app.include_router(debug_router)
 @app.get("/health", tags=["Служебные"])
 def health():
     return {"status": "ok"}
+
+
+@app.get("/version", tags=["Служебные"])
+def version():
+    """Возвращает версию работающего образа (для проверки релиза в CD)."""
+    return {
+        "version": os.getenv("APP_VERSION", "dev"),
+        "commit": os.getenv("GIT_COMMIT", "unknown"),
+        "build_time": os.getenv("BUILD_TIME", "unknown"),
+    }
 
 
 if STATIC_DIR.exists():

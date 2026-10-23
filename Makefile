@@ -1,7 +1,11 @@
 SHELL := /bin/bash
 .SHELLFLAGS := -c
 
-VENV_BIN := .venv/bin
+ifeq ($(OS),Windows_NT)
+    VENV_BIN := .venv/Scripts
+else
+    VENV_BIN := .venv/bin
+endif
 RUFF := $(VENV_BIN)/ruff
 PYTEST := $(VENV_BIN)/pytest
 ALEMBIC := $(VENV_BIN)/alembic

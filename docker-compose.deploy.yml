@@ -1,0 +1,55 @@
+# Предэксплуатационное окружение для CD.
+# Отличия от docker-compose.yml (dev):
+#   - нет build: образ тянется из registry по тегу ${APP_VERSION}
+#   - отдельные сеть, том и порт (8080), чтобы не конфликтовать с dev
+#   - настройки окружения в .env.deploy (не в образе)
+services:
+  db:
+    image: postgres:18
+    restart: unless-stopped
+    env_file: .env.deploy
+    volumes:
+      - pgdata_deploy:/var/lib/postgresql
+    networks:
+      - deploy_backend
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    image: ${CI_REGISTRY_IMAGE}:${APP_VERSION}
+    restart: unless-stopped
+    env_file: .env.deploy
+    depends_on:
+      db:
+        condition: service_healthy
+    expose:
+      - "8000"
+    networks:
+      - deploy_backend
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    stop_grace_period: 10s
+
+  nginx:
+    image: nginxinc/nginx-unprivileged:1.25-alpine
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./nginx.deploy.conf:/etc/nginx/nginx.conf:ro,Z
+    depends_on:
+      - app
+    networks:
+      - deploy_backend
+
+volumes:
+  pgdata_deploy:
+
+networks:
+  deploy_backend:
+    driver: bridge
