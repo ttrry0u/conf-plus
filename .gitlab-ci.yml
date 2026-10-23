@@ -125,7 +125,7 @@ trivy-scan-job:
     entrypoint: [""]
   before_script: []
   script:
-    - trivy image --exit-code 1 --severity CRITICAL $DOCKER_IMAGE
+    - trivy image --exit-code 1 --severity CRITICAL --db-repository ghcr.io/aquasecurity/trivy-db $DOCKER_IMAGE
 
 publish-job:
   stage: publish
