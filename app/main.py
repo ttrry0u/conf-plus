@@ -1,3 +1,4 @@
+import os
 import socket
 from pathlib import Path
 
@@ -88,6 +89,16 @@ app.include_router(debug_router)
 @app.get("/health", tags=["Служебные"])
 def health():
     return {"status": "ok"}
+
+
+@app.get("/version", tags=["Служебные"])
+def version():
+    """Возвращает версию работающего образа (для проверки релиза в CD)."""
+    return {
+        "version": os.getenv("APP_VERSION", "dev"),
+        "commit": os.getenv("GIT_COMMIT", "unknown"),
+        "build_time": os.getenv("BUILD_TIME", "unknown"),
+    }
 
 
 if STATIC_DIR.exists():

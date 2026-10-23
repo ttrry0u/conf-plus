@@ -7,6 +7,8 @@ stages:
   - build
   - scan-image
   - publish
+  - deploy
+  - verify-deploy
 
 variables:
   DOCKER_IMAGE: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
@@ -110,8 +112,20 @@ build-job:
   before_script:
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
   script:
-    - docker build -t $DOCKER_IMAGE .
+    - APP_VERSION=${CI_COMMIT_TAG:-$CI_COMMIT_SHA}
+    - BUILD_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+    - |
+      docker build \
+        --build-arg APP_VERSION=$APP_VERSION \
+        --build-arg GIT_COMMIT=$CI_COMMIT_SHA \
+        --build-arg BUILD_TIME=$BUILD_TIME \
+        -t $DOCKER_IMAGE .
     - docker push $DOCKER_IMAGE
+    - |
+      if [ "$APP_VERSION" != "$CI_COMMIT_SHA" ]; then
+        docker tag $DOCKER_IMAGE $CI_REGISTRY_IMAGE:$APP_VERSION
+        docker push $CI_REGISTRY_IMAGE:$APP_VERSION
+      fi
 
 trivy-scan-job:
   stage: scan-image
@@ -133,3 +147,85 @@ publish-job:
     - docker push $CI_REGISTRY_IMAGE:latest
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
+
+# ============================================================
+# CD: развертывание в предэксплуатационное окружение
+# ============================================================
+
+.deploy_ssh: &deploy_ssh
+  image: alpine:3.19
+  before_script:
+    - apk add --no-cache openssh-client
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh && chmod 700 ~/.ssh
+    - ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts
+
+deploy-job:
+  stage: deploy
+  <<: *deploy_ssh
+  resource_group: production
+  environment:
+    name: preprod
+    url: http://$DEPLOY_HOST:8080
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^v/
+      when: manual
+    - if: $CI_COMMIT_BRANCH == "main"
+      when: manual
+  script:
+    - APP_VERSION=${CI_COMMIT_TAG:-$CI_COMMIT_SHA}
+    - echo "Deploying $APP_VERSION"
+    - scp docker-compose.deploy.yml nginx.deploy.conf scripts/deploy.sh scripts/rollback.sh "$DEPLOY_USER@$DEPLOY_HOST:/opt/conf-plus-deploy/"
+    - ssh "$DEPLOY_USER@$DEPLOY_HOST" "cd /opt/conf-plus-deploy && chmod +x scripts/deploy.sh scripts/rollback.sh && ./scripts/deploy.sh $APP_VERSION"
+
+verify-deploy-job:
+  stage: verify-deploy
+  image: alpine:3.19
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^v/
+    - if: $CI_COMMIT_BRANCH == "main"
+  before_script:
+    - apk add --no-cache curl
+  script:
+    - APP_VERSION=${CI_COMMIT_TAG:-$CI_COMMIT_SHA}
+    - echo "==> /nginx-health"
+    - curl -sf http://$DEPLOY_HOST:8080/nginx-health
+    - echo "==> /health"
+    - curl -sf http://$DEPLOY_HOST:8080/health | grep -q '"status":"ok"'
+    - echo "==> /version"
+    - |
+      ACTUAL=$(curl -sf http://$DEPLOY_HOST:8080/version | sed -n 's/.*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
+      echo "expected=$APP_VERSION actual=$ACTUAL"
+      if [ "$ACTUAL" != "$APP_VERSION" ]; then
+        echo "FAIL: version mismatch"
+        exit 1
+      fi
+    - echo "==> Основной сценарий (регистрация)"
+    - |
+      EMAIL="ci-$(date +%s)@example.com"
+      curl -sf -X POST http://$DEPLOY_HOST:8080/api/auth/register \
+        -H "Content-Type: application/json" \
+        -d "{\"full_name\":\"CI Test\",\"email\":\"$EMAIL\",\"password\":\"testpass123\",\"role\":\"participant\",\"consent_152fz\":true}" \
+        | grep -q "access_token"
+    - echo "OK: основной сценарий работает"
+
+rollback-job:
+  stage: deploy
+  <<: *deploy_ssh
+  resource_group: production
+  environment:
+    name: preprod
+    url: http://$DEPLOY_HOST:8080
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^v/
+      when: manual
+    - if: $CI_COMMIT_BRANCH == "main"
+      when: manual
+  script:
+    - |
+      if [ -n "${ROLLBACK_TO:-}" ]; then
+        ssh "$DEPLOY_USER@$DEPLOY_HOST" "cd /opt/conf-plus-deploy && ./scripts/rollback.sh $ROLLBACK_TO"
+      else
+        ssh "$DEPLOY_USER@$DEPLOY_HOST" "cd /opt/conf-plus-deploy && ./scripts/rollback.sh"
+      fi

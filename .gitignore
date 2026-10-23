@@ -43,3 +43,7 @@ alembic/versions/__pycache__/
 
 # pytest artifacts
 report.xml
+!.env.deploy.example
+
+# CD runtime state
+.deploy-state/
