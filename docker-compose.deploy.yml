@@ -41,7 +41,7 @@ services:
     ports:
       - "8080:80"
     volumes:
-      - ./nginx.deploy.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx.deploy.conf:/etc/nginx/nginx.conf:ro,Z
     depends_on:
       - app
     networks:
