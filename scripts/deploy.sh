@@ -41,7 +41,7 @@ echo "==> Pulling $CI_REGISTRY_IMAGE:$VERSION"
 $COMPOSE_CMD -f "$COMPOSE_FILE" pull app
 
 echo "==> Restarting services"
-$COMPOSE_CMD -f "$COMPOSE_FILE" up -d --remove-orphans
+$COMPOSE_CMD -f "$COMPOSE_FILE" up -d --force-recreate --remove-orphans
 
 echo "==> Waiting for /nginx-health"
 for i in $(seq 1 60); do
