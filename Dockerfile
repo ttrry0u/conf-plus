@@ -7,6 +7,15 @@ RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 
 # --- Этап 2: Финальный образ ---
 FROM python:3.11-slim
+
+# Версия образа — передаётся из CI при сборке (см. .gitlab-ci.yml)
+ARG APP_VERSION=dev
+ARG GIT_COMMIT=unknown
+ARG BUILD_TIME=unknown
+ENV APP_VERSION=$APP_VERSION \
+    GIT_COMMIT=$GIT_COMMIT \
+    BUILD_TIME=$BUILD_TIME
+
 RUN useradd -m -u 1000 appuser
 WORKDIR /app
 COPY --from=builder /install /usr/local
