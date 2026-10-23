@@ -39,11 +39,9 @@ services:
   nginx:
     image: nginx:1.25-alpine
     ports:
-      - "8080:80"
+      - "8080:8080"
     volumes:
       - ./nginx.deploy.conf:/etc/nginx/nginx.conf:ro,Z
-    sysctls:
-      - net.ipv4.ip_unprivileged_port_start=0
     depends_on:
       - app
     networks:
