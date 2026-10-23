@@ -114,18 +114,9 @@ build-job:
   script:
     - APP_VERSION=${CI_COMMIT_TAG:-$CI_COMMIT_SHA}
     - BUILD_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-    - |
-      docker build \
-        --build-arg APP_VERSION=$APP_VERSION \
-        --build-arg GIT_COMMIT=$CI_COMMIT_SHA \
-        --build-arg BUILD_TIME=$BUILD_TIME \
-        -t $DOCKER_IMAGE .
+    - docker build --build-arg APP_VERSION=$APP_VERSION --build-arg GIT_COMMIT=$CI_COMMIT_SHA --build-arg BUILD_TIME=$BUILD_TIME -t $DOCKER_IMAGE .
     - docker push $DOCKER_IMAGE
-    - |
-      if [ "$APP_VERSION" != "$CI_COMMIT_SHA" ]; then
-        docker tag $DOCKER_IMAGE $CI_REGISTRY_IMAGE:$APP_VERSION
-        docker push $CI_REGISTRY_IMAGE:$APP_VERSION
-      fi
+    - if [ "$APP_VERSION" != "$CI_COMMIT_SHA" ]; then docker tag $DOCKER_IMAGE $CI_REGISTRY_IMAGE:$APP_VERSION && docker push $CI_REGISTRY_IMAGE:$APP_VERSION; fi
 
 trivy-scan-job:
   stage: scan-image
@@ -147,10 +138,6 @@ publish-job:
     - docker push $CI_REGISTRY_IMAGE:latest
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
-
-# ============================================================
-# CD: развертывание в предэксплуатационное окружение
-# ============================================================
 
 .deploy_ssh: &deploy_ssh
   image: alpine:3.19
@@ -194,20 +181,9 @@ verify-deploy-job:
     - echo "==> /health"
     - curl -sf http://$DEPLOY_HOST:8080/health | grep -q '"status":"ok"'
     - echo "==> /version"
-    - |
-      ACTUAL=$(curl -sf http://$DEPLOY_HOST:8080/version | sed -n 's/.*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
-      echo "expected=$APP_VERSION actual=$ACTUAL"
-      if [ "$ACTUAL" != "$APP_VERSION" ]; then
-        echo "FAIL: version mismatch"
-        exit 1
-      fi
+    - ACTUAL=$(curl -sf http://$DEPLOY_HOST:8080/version | sed -n 's/.*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p') && echo "expected=$APP_VERSION actual=$ACTUAL" && [ "$ACTUAL" = "$APP_VERSION" ] || (echo "FAIL: version mismatch" && exit 1)
     - echo "==> Основной сценарий (регистрация)"
-    - |
-      EMAIL="ci-$(date +%s)@example.com"
-      curl -sf -X POST http://$DEPLOY_HOST:8080/api/auth/register \
-        -H "Content-Type: application/json" \
-        -d "{\"full_name\":\"CI Test\",\"email\":\"$EMAIL\",\"password\":\"testpass123\",\"role\":\"participant\",\"consent_152fz\":true}" \
-        | grep -q "access_token"
+    - EMAIL="ci-$(date +%s)@example.com" && curl -sf -X POST http://$DEPLOY_HOST:8080/api/auth/register -H "Content-Type: application/json" -d "{\"full_name\":\"CI Test\",\"email\":\"$EMAIL\",\"password\":\"testpass123\",\"role\":\"participant\",\"consent_152fz\":true}" | grep -q "access_token"
     - echo "OK: основной сценарий работает"
 
 rollback-job:
@@ -223,9 +199,4 @@ rollback-job:
     - if: $CI_COMMIT_BRANCH == "main"
       when: manual
   script:
-    - |
-      if [ -n "${ROLLBACK_TO:-}" ]; then
-        ssh "$DEPLOY_USER@$DEPLOY_HOST" "cd /opt/conf-plus-deploy && ./scripts/rollback.sh $ROLLBACK_TO"
-      else
-        ssh "$DEPLOY_USER@$DEPLOY_HOST" "cd /opt/conf-plus-deploy && ./scripts/rollback.sh"
-      fi
+    - if [ -n "${ROLLBACK_TO:-}" ]; then ssh "$DEPLOY_USER@$DEPLOY_HOST" "cd /opt/conf-plus-deploy && ./scripts/rollback.sh $ROLLBACK_TO"; else ssh "$DEPLOY_USER@$DEPLOY_HOST" "cd /opt/conf-plus-deploy && ./scripts/rollback.sh"; fi
