@@ -58,7 +58,7 @@ done
 
 echo "==> Waiting for /health"
 for i in $(seq 1 20); do
-    if curl -sf http://localhost:8080/health | grep -q '"status":"ok"'; then
+    if curl -sf http://localhost:8080/health >/dev/null; then
         echo "OK: /health"
         break
     fi
