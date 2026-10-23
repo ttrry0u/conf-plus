@@ -9,6 +9,7 @@ stages:
   - publish
   - deploy
   - verify-deploy
+  - rollback
 
 variables:
   DOCKER_IMAGE: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
@@ -158,6 +159,7 @@ deploy-job:
   environment:
     name: preprod
     url: http://$DEPLOY_HOST:8080
+  allow_failure: true
   rules:
     - if: $CI_COMMIT_TAG =~ /^v/
       when: manual
@@ -184,12 +186,13 @@ verify-deploy-job:
     - bash scripts/verify-deploy.sh
 
 rollback-job:
-  stage: deploy
+  stage: rollback
   <<: *deploy_ssh
   resource_group: production
   environment:
     name: preprod
     url: http://$DEPLOY_HOST:8080
+  allow_failure: true
   rules:
     - if: $CI_COMMIT_TAG =~ /^v/
       when: manual
